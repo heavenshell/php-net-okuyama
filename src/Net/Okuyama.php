@@ -156,6 +156,12 @@ class Okuyama
         return $this;
     }
 
+    /**
+     * Close connection.
+     *
+     * @access public
+     * @return bool true: Success to close
+     */
     public function close()
     {
         return $this->_client->close();
@@ -177,9 +183,9 @@ class Okuyama
     /**
      * Set data.
      *
-     * @param  mixed $key Key string
+     * @param  mixed $key Key
      * @param  mixed $value Value
-     * @param  mixed $tag Tag string
+     * @param  mixed $tag Tags
      * @access public
      * @return \Net\Okuyama Fluent interface
      */
@@ -190,6 +196,15 @@ class Okuyama
         return $this;
     }
 
+    /**
+     * Add data.
+     *
+     * @param  mixed $key Key
+     * @param  mixed $value Value
+     * @param  mixed $tag Tags
+     * @access public
+     * @return \Net\Okuyama Fluent interface
+     */
     public function add($key, $value, array $tags = array())
     {
         $ret = $this->_client->add($key, $value, $tags);
@@ -200,7 +215,7 @@ class Okuyama
     /**
      * Remove data.
      *
-     * @param  mixed $key
+     * @param  mixed $key Key
      * @access public
      * @return mixed Result of remove command
      */
@@ -212,7 +227,7 @@ class Okuyama
     /**
      * Get keys by tag.
      *
-     * @param  mixed $tag
+     * @param  mixed $tag Tags
      * @param  mixed $returns
      * @access public
      * @return mixed Keys or null
