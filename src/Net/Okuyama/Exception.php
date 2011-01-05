@@ -52,7 +52,7 @@ use Net\Okuyama;
  *
  * @use       Net\Okuyama
  * @category  Net
- * @package   \Net\KyotoTycoon
+ * @package   \Net\Okuyama
  * @version   $id$
  * @copyright (c) 2011 Shinya Ohyanagi
  * @author    Shinya Ohyanagi <sohyanagi@gmail.com>
