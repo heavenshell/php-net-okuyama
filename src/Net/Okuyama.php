@@ -95,18 +95,18 @@ class Okuyama
     }
 
     /**
-     * setConfigs
+     * Set config options.
      *
-     * @param array $configs
+     * @param  array $configs
      * @access public
      * @return void
      */
-    public function setConfigs(array $configs)
+    public function setConfig(array $configs)
     {
         if ($this->_adapter === null) {
             throw new Exception('Adapter does not set.');
         }
-        $this->_client->setConfigs($configs);
+        $this->_client->setConfig($configs);
 
         return $this;
     }

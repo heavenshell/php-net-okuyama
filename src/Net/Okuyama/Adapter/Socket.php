@@ -232,13 +232,13 @@ class Socket implements Adapter
     }
 
     /**
-     * Set configs.
+     * Set config options.
      *
-     * @param  array $args Configs
+     * @param  array $args Config options
      * @access public
      * @return \Net\Okuyama\Adapter\Socket Fluent interface
      */
-    public function setConfigs(array $args)
+    public function setConfig(array $args)
     {
         $this->_timeout = isset($args['timeout']) ? $args['timeout'] : 10;
 
