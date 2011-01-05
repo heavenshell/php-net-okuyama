@@ -136,6 +136,3 @@ $t->setMarker('Close connection.');
 $client->close();
 $t->stop();
 $t->display();
-
-
-var_dump(get_class_methods(new OkuyamaClient));
