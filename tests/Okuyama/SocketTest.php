@@ -252,12 +252,10 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $ret = $this->_client->remove('baz');
         $this->_client->add('baz', 'fiz');
         $ret = $this->_client->add('baz', 'fiz');
-
-        $this->assertTrue($ret instanceof \Net\Okuyama\Adapter\Socket);
+        $this->assertFalse($ret);
 
         $this->_client->close();
     }
-
 
     public function testShouldGetRawData()
     {
