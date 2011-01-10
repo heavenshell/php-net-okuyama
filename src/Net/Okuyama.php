@@ -134,7 +134,7 @@ class Okuyama
             $this->_adapter = $configs['adapter'];
         }
 
-        $this->setAdapter($this->_adapter);
+        $this->createInstance($this->_adapter);
         if ($configs !== array()) {
             $this->setConfigs($configs);
         }
