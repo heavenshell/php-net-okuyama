@@ -261,4 +261,36 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($ret instanceof \Net\Okuyama);
         $this->_client->close();
     }
+
+    public function testShouldSetDataWithUsingSetKeyPrefix()
+    {
+        $this->_client->connect($this->_hosts);
+        $this->_client->setKeyPrefix(self::KEY_PREFIX);
+
+        $tags = array('fiz', 'baz');
+        $this->_client->set('bar', 'foo', $tags)
+                      ->set('hoge', 'fuga', $tags)
+                      ->set('foo', 'bar', $tags);
+
+        $result = $this->_client->getKeysByTag('fiz', true);
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo'
+        ));
+
+
+        $this->_client->setKeyPrefix('');
+        $this->assertSame($this->_client->get(self::KEY_PREFIX . 'bar'), 'foo');
+        $this->assertSame($this->_client->get(self::KEY_PREFIX . 'hoge'), 'fuga');
+        $this->assertSame($this->_client->get(self::KEY_PREFIX . 'foo'), 'bar');
+
+
+        $this->_client->setKeyPrefix(self::KEY_PREFIX);
+        $this->assertTrue($this->_client->remove('bar'));
+        $this->assertTrue($this->_client->remove('hoge'));
+        $this->assertTrue($this->_client->remove('foo'));
+
+        $this->_client->close();
+    }
 }

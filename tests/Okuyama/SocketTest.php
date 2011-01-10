@@ -279,12 +279,12 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($result[0], 'true');
         $this->assertRegExp('/\d+/', $result[1]);
 
-        $this->_client->set('foo', 'bar');
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'OK');
 
-        $this->_client->get('foo');
+        $this->_client->get(self::KEY_PREFIX . 'foo');
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'bar');

@@ -83,6 +83,39 @@ class Okuyama
     protected $_adapter = '\Net\Okuyama\Adapter\Socket';
 
     /**
+     * Key prefix.
+     *
+     * @var    string
+     * @access protected
+     */
+    protected $_keyPrefix = '';
+
+    /**
+     * Get key prefix.
+     *
+     * @access public
+     * @return string Key prefix
+     */
+    public function getKeyPrefix()
+    {
+        return $this->_keyPrefix;
+    }
+
+    /**
+     * Set key prefix.
+     *
+     * @param  mixed $prefix
+     * @access public
+     * @return \Net\Okuyama Fluent interface
+     */
+    public function setKeyPrefix($prefix)
+    {
+        $this->_keyPrefix = $prefix;
+        return $this;
+    }
+
+
+    /**
      * Create client instance.
      *
      * @param  mixed $adapter
@@ -178,7 +211,7 @@ class Okuyama
      */
     public function get($key)
     {
-        return $this->_client->get($key);
+        return $this->_client->get($this->_keyPrefix . $key);
     }
 
     /**
@@ -192,8 +225,7 @@ class Okuyama
      */
     public function set($key, $value, array $tags = array())
     {
-        $ret = $this->_client->set($key, $value, $tags);
-
+        $ret = $this->_client->set($this->_keyPrefix . $key, $value, $tags);
         return $this;
     }
 
@@ -208,7 +240,7 @@ class Okuyama
      */
     public function add($key, $value, array $tags = array())
     {
-        $ret = $this->_client->add($key, $value, $tags);
+        $ret = $this->_client->add($this->_keyPrefix . $key, $value, $tags);
 
         return $this;
     }
@@ -222,7 +254,7 @@ class Okuyama
      */
     public function remove($key)
     {
-        return $this->_client->remove($key);
+        return $this->_client->remove($this->_keyPrefix . $key);
     }
 
     /**
@@ -249,7 +281,7 @@ class Okuyama
     {
         $result = array();
         foreach ($keys as $key) {
-            $result[$key] = $this->_client->get($key);
+            $result[$key] = $this->_client->get($this->_keyPrefix . $key);
         }
 
         return $result;
@@ -268,7 +300,9 @@ class Okuyama
             if (isset($v['key']) && isset($v['value'])) {
                 $tags = (isset($v['tags']) && is_array($v['tags'])) ? $v['tags'] : null;
 
-                $this->_client->set($v['key'], $v['value'], $tags);
+                $this->_client->set(
+                    $this->_keyPrefix . $v['key'], $v['value'], $tags
+                );
             }
         }
 
@@ -286,7 +320,7 @@ class Okuyama
     {
         $result = array();
         foreach ($keys as $key) {
-            $result[$key] = $this->_client->remove($key);
+            $result[$key] = $this->_client->remove($this->_keyPrefix . $key);
         }
 
         return $result;
