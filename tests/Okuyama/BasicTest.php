@@ -74,7 +74,13 @@ require_once 'Net/Okuyama.php';
  */
 class BasicTest extends \PHPUnit_Framework_TestCase
 {
+    const KEY_PREFIX = 'Net_Okuyama_Test_';
+
     private $_client = null;
+
+    private $_hosts = array(
+        '127.0.0.1:8888'
+    );
 
     public function setUp()
     {
@@ -88,13 +94,13 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testshouldConnetToHost()
     {
-        $result = $this->_client->connect(array('localhost:8888'));
+        $result = $this->_client->connect($this->_hosts);
         $this->assertTrue($result instanceof \Net\Okuyama);
     }
 
     public function testShouldCloseConnection()
     {
-        $result = $this->_client->connect(array('127.0.0.1:8888'));
+        $result = $this->_client->connect($this->_hosts);
         $this->assertTrue($this->_client->close());
     }
 
@@ -108,58 +114,64 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldConnectToHostAuto()
     {
-        $hosts = array(
-            '127.0.0.1:8889',
-            '127.0.0.1:8888',
-        );
-        $result = $this->_client->connect($hosts);
+
+        $this->_hosts[] = '127.0.0.1:8889';
+        $result = $this->_client->connect($this->_hosts);
         $this->assertTrue($result instanceof \Net\Okuyama);
         $this->_client->close();
     }
 
     public function testShouldSetDataToServer()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
-        $ret = $this->_client->set('foo', 'bar');
+        $this->_client->connect($this->_hosts);
+        $ret = $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
         $this->assertTrue($ret instanceof \Net\Okuyama);
 
-        $value = $this->_client->get('foo');
+        $value = $this->_client->get(self::KEY_PREFIX . 'foo');
         $this->assertSame($value, 'bar');
         $this->_client->close();
     }
 
     public function testShouldSetDataWithTag()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
+        $this->_client->connect($this->_hosts);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
         $result = $this->_client->getKeysByTag('fiz');
-        $this->assertSame($result, array('bar', 'hoge', 'foo'));
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo'
+        ));
         $this->_client->close();
     }
 
     public function testShouldGetDataWithTag()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
+        $this->_client->connect($this->_hosts);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
         $result = $this->_client->getKeysByTag('baz');
-        $this->assertSame($result, array('bar', 'hoge', 'foo'));
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo'
+        ));
         $this->_client->close();
     }
 
     public function testShouldReturnNullWhenTagNotExitsts()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
+        $this->_client->connect($this->_hosts);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
         $result = $this->_client->getKeysByTag('baz' . rand(0, 1000));
         $this->assertSame($result, null);
@@ -168,16 +180,16 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldReturnNullWhenArgReturnsSetFalse()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
+        $this->_client->connect($this->_hosts);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
-        $this->_client->remove('bar');
-        $this->_client->remove('hoge');
-        $this->_client->remove('foo');
-        $ret = $this->_client->get('bar');
+        $this->_client->remove(self::KEY_PREFIX . 'bar');
+        $this->_client->remove(self::KEY_PREFIX . 'hoge');
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $ret = $this->_client->get(self::KEY_PREFIX . 'bar');
 
         $result = $this->_client->getKeysByTag('baz', false);
         $this->assertSame($result, null);
@@ -186,50 +198,54 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldReturnKeyWhenArgReturnsSetTrue()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
+        $this->_client->connect($this->_hosts);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
-        $this->_client->remove('bar');
-        $this->_client->remove('hoge');
-        $this->_client->remove('foo');
+        $this->_client->remove(self::KEY_PREFIX . 'bar');
+        $this->_client->remove(self::KEY_PREFIX . 'hoge');
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
 
         $result = $this->_client->getKeysByTag('fiz', true);
-        $this->assertSame($result, array('bar', 'hoge', 'foo'));
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo'
+        ));
         $this->_client->close();
     }
 
     public function testShouldReturnTrueWhenDeleteSuccess()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
-        $this->_client->set('foo', 'bar');
-        $ret = $this->_client->remove('foo');
+        $this->_client->connect($this->_hosts);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'foo');
         $this->assertTrue($ret);
 
-        $value = $this->_client->get('foo');
+        $value = $this->_client->get(self::KEY_PREFIX . 'foo');
         $this->assertSame($value, null);
         $this->_client->close();
     }
 
     public function testShouldReturnFalseWhenRemoveFalse()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
-        $this->_client->set('foo', 'bar');
-        $ret = $this->_client->remove('foo');
+        $this->_client->connect($this->_hosts);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'foo');
         $this->assertTrue($ret);
 
-        $ret = $this->_client->remove('foo');
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'foo');
         $this->assertFalse($ret);
         $this->_client->close();
     }
 
     public function testShouldAddData()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
-        $ret = $this->_client->remove('baz');
-        $ret = $this->_client->add('baz', 'fiz');
+        $this->_client->connect($this->_hosts);
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'baz');
+        $ret = $this->_client->add(self::KEY_PREFIX . 'baz', 'fiz');
         $this->assertTrue($ret instanceof \Net\Okuyama);
 
         $this->_client->close();
@@ -237,10 +253,10 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldReturnFalseWhenDataAlreadyAdded()
     {
-        $this->_client->connect(array('127.0.0.1:8888'));
-        $ret = $this->_client->remove('baz');
-        $this->_client->add('baz', 'fiz');
-        $ret = $this->_client->add('baz', 'fiz');
+        $this->_client->connect($this->_hosts);
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'baz');
+        $this->_client->add(self::KEY_PREFIX . 'baz', 'fiz');
+        $ret = $this->_client->add(self::KEY_PREFIX . 'baz', 'fiz');
 
         $this->assertTrue($ret instanceof \Net\Okuyama);
         $this->_client->close();

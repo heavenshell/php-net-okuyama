@@ -84,6 +84,10 @@ require_once 'Net/Okuyama/Adapter/Socket.php';
  */
 class SocketTest extends \PHPUnit_Framework_TestCase
 {
+    const KEY_PREFIX = 'Net_Okuyama_Test_';
+    const HOST = '127.0.0.1';
+    const PORT = 8888;
+
     private $_client = null;
 
     public function setUp()
@@ -98,14 +102,14 @@ class SocketTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldConnectToHost()
     {
-        $result = $this->_client->connect('127.0.0.1', 8888);
+        $result = $this->_client->connect(self::HOST, self::PORT);
         $this->assertInternalType('resource', $result);
         $this->assertTrue($this->_client->close());
     }
 
     public function testShouldCloseConnection()
     {
-        $result = $this->_client->connect('127.0.0.1', 8888);
+        $result = $this->_client->connect(self::HOST, self::PORT);
         $this->assertTrue($this->_client->close());
     }
 
@@ -120,8 +124,8 @@ class SocketTest extends \PHPUnit_Framework_TestCase
     public function testShouldConnectToHostAuto()
     {
         $hosts = array(
-            '127.0.0.1:8889',
-            '127.0.0.1:8888',
+            self::HOST . ':' . (self::PORT + 1),
+            self::HOST . ':' . self::PORT
         );
         $result = $this->_client->autoConnect($hosts);
         $this->assertTrue($result);
@@ -130,64 +134,72 @@ class SocketTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldSetDataToServer()
     {
-        $this->_client->connect('127.0.0.1', 8888);
-        $ret = $this->_client->set('foo', 'bar');
+        $this->_client->connect(self::HOST, self::PORT);
+        $ret = $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
         $this->assertTrue($ret instanceof \Net\Okuyama\Adapter\Socket);
 
-        $value = $this->_client->get('foo');
+        $value = $this->_client->get(self::KEY_PREFIX . 'foo');
         $this->assertSame($value, 'bar');
         $this->_client->close();
     }
 
     public function testShouldSetDataWithTag()
     {
-        $this->_client->connect('127.0.0.1', 8888);
+        $this->_client->connect(self::HOST, self::PORT);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
         $result = $this->_client->getKeysByTag('fiz');
-        $this->assertSame($result, array('bar', 'hoge', 'foo'));
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo')
+        );
         $this->_client->close();
     }
 
     public function testShouldGetDataWithTag()
     {
-        $this->_client->connect('127.0.0.1', 8888);
+        $this->_client->connect(self::HOST, self::PORT);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
         $result = $this->_client->getKeysByTag('baz');
-        $this->assertSame($result, array('bar', 'hoge', 'foo'));
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo'
+        ));
         $this->_client->close();
     }
 
     public function testShouldReturnNullWhenTagNotExitsts()
     {
-        $this->_client->connect('127.0.0.1', 8888);
+        $this->_client->connect(self::HOST, self::PORT);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
-        $result = $this->_client->getKeysByTag('baz' . rand(0, 1000));
+        $result = $this->_client->getKeysByTag(self::KEY_PREFIX . 'baz' . rand(0, 1000));
         $this->assertSame($result, null);
         $this->_client->close();
     }
 
     public function testShouldReturnNullWhenArgReturnsSetFalse()
     {
-        $this->_client->connect('127.0.0.1', 8888);
+        $this->_client->connect(self::HOST, self::PORT);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
-        $this->_client->remove('bar');
-        $this->_client->remove('hoge');
-        $this->_client->remove('foo');
+        $this->_client->remove(self::KEY_PREFIX . 'bar');
+        $this->_client->remove(self::KEY_PREFIX . 'hoge');
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
         $ret = $this->_client->get('bar');
 
         $result = $this->_client->getKeysByTag('baz', false);
@@ -197,61 +209,64 @@ class SocketTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldReturnKeyWhenArgReturnsSetTrue()
     {
-        $this->_client->connect('127.0.0.1', 8888);
+        $this->_client->connect(self::HOST, self::PORT);
         $tags = array('fiz', 'baz');
-        $this->_client->set('bar', 'foo', $tags)
-                      ->set('hoge', 'fuga', $tags)
-                      ->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'bar', 'foo', $tags)
+                      ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
+                      ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
-        $this->_client->remove('bar');
-        $this->_client->remove('hoge');
-        $this->_client->remove('foo');
+        $this->_client->remove(self::KEY_PREFIX . 'bar');
+        $this->_client->remove(self::KEY_PREFIX . 'hoge');
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
 
         $result = $this->_client->getKeysByTag('fiz', true);
-        $this->assertSame($result, array('bar', 'hoge', 'foo'));
+        $this->assertSame($result, array(
+            self::KEY_PREFIX . 'bar',
+            self::KEY_PREFIX . 'hoge',
+            self::KEY_PREFIX . 'foo'
+        ));
         $this->_client->close();
     }
 
     public function testShouldReturnTrueWhenDeleteSuccess()
     {
-        $this->_client->connect('127.0.0.1', 8888);
-        $this->_client->set('foo', 'bar');
-        $ret = $this->_client->remove('foo');
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'foo');
         $this->assertTrue($ret);
 
-        $value = $this->_client->get('foo');
+        $value = $this->_client->get(self::KEY_PREFIX . 'foo');
         $this->assertSame($value, null);
         $this->_client->close();
     }
 
     public function testShouldReturnFalseWhenRemoveFalse()
     {
-        $this->_client->connect('127.0.0.1', 8888);
-        $this->_client->set('foo', 'bar');
-        $ret = $this->_client->remove('foo');
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'foo');
         $this->assertTrue($ret);
 
-        $ret = $this->_client->remove('foo');
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'foo');
         $this->assertFalse($ret);
         $this->_client->close();
     }
 
     public function testShouldAddData()
     {
-        $this->_client->connect('127.0.0.1', 8888);
-        $ret = $this->_client->remove('baz');
-        $ret = $this->_client->add('baz', 'fiz');
+        $this->_client->connect(self::HOST, self::PORT);
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'baz');
+        $ret = $this->_client->add(self::KEY_PREFIX . 'baz', 'fiz');
         $this->assertTrue($ret instanceof \Net\Okuyama\Adapter\Socket);
-
         $this->_client->close();
     }
 
     public function testShouldReturnFalseWhenDataAlreadyAdded()
     {
-        $this->_client->connect('127.0.0.1', 8888);
-        $ret = $this->_client->remove('baz');
-        $this->_client->add('baz', 'fiz');
-        $ret = $this->_client->add('baz', 'fiz');
+        $this->_client->connect(self::HOST, self::PORT);
+        $ret = $this->_client->remove(self::KEY_PREFIX . 'baz');
+        $this->_client->add(self::KEY_PREFIX . 'baz', 'fiz');
+        $ret = $this->_client->add(self::KEY_PREFIX . 'baz', 'fiz');
         $this->assertFalse($ret);
 
         $this->_client->close();
@@ -259,7 +274,7 @@ class SocketTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldGetRawData()
     {
-        $this->_client->connect('127.0.0.1', 8888);
+        $this->_client->connect(self::HOST, self::PORT);
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertRegExp('/\d+/', $result[1]);
@@ -275,13 +290,13 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($result[1], 'bar');
 
         $tags = array('fiz', 'baz');
-        $this->_client->set('foo', 'bar', $tags);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
         $this->_client->getKeysByTag('fiz');
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
-        $this->assertSame($result[1], array('foo'));
+        $this->assertSame($result[1], array(self::KEY_PREFIX . 'foo'));
 
-        $this->_client->remove('foo');
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'bar');
