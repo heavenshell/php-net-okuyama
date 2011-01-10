@@ -67,29 +67,31 @@ class Okuyama
     const VERSION = '0.0.1';
 
     /**
-     * _client
+     * Client to access Okuyama.
      *
      * @var    mixed
      * @access protected
      */
     protected $_client = null;
+
     /**
-     * _adapter
+     * Adapter class.
      *
-     * @var mixed
+     * @var    mixed
      * @access protected
      */
     protected $_adapter = '\Net\Okuyama\Adapter\Socket';
 
     /**
-     * setAdapter
+     * Create client instance.
      *
-     * @param mixed $adapter
+     * @param  mixed $adapter
      * @access public
-     * @return void
+     * @return Net\Okuyama Fluent interface
      */
-    public function setAdapter($adapter)
+    public function createInstance($adapter)
     {
+        // TODO: Use ReflectionClass.
         $this->_client = new $adapter;
         return $this;
     }
@@ -99,7 +101,7 @@ class Okuyama
      *
      * @param  array $configs
      * @access public
-     * @return void
+     * @return \Net\Okuyama Fluent interface
      */
     public function setConfig(array $configs)
     {
@@ -116,11 +118,10 @@ class Okuyama
      *
      * <pre>
      *   array(
-     *     'adapter'  => 'Adapter class',
-     *     'timeout'  => 'Connection timeout, defult 10'
+     *     'adapter' => '\Net\Okuyama\Adapter\Socket', // Adapter class name.
+     *     'timeout' => 10 // Timeout second.
      *   );
      * </pre>
-     *
      *
      * @param  array $configs
      * @access public
