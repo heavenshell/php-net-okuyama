@@ -217,8 +217,8 @@ class Okuyama
     /**
      * Set data.
      *
-     * @param  mixed $key Key
-     * @param  mixed $value Value
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
      * @param  mixed $tag Tags
      * @access public
      * @return \Net\Okuyama Fluent interface
@@ -232,8 +232,8 @@ class Okuyama
     /**
      * Add data.
      *
-     * @param  mixed $key Key
-     * @param  mixed $value Value
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
      * @param  mixed $tag Tags
      * @access public
      * @return \Net\Okuyama Fluent interface
@@ -271,9 +271,9 @@ class Okuyama
     }
 
     /**
-     * Get data at once.
+     * Retrieve records at once
      *
-     * @param  array $keys Keys
+     * @param  array $key The key of the record
      * @access public
      * @return array Values
      */
@@ -288,7 +288,7 @@ class Okuyama
     }
 
     /**
-     * Set data at once.
+     * Set record at once.
      *
      * @param  array $vals
      * @access public
@@ -312,7 +312,7 @@ class Okuyama
     /**
      * Remove at onece.
      *
-     * @param  array $keys Keys
+     * @param  array $key The key of the record
      * @access public
      * @return array Result of remove command
      */
