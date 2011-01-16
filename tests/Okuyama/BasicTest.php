@@ -293,4 +293,50 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
         $this->_client->close();
     }
+
+    public function testShouldGetVersionNo()
+    {
+        $this->_client->connect($this->_hosts);
+        $this->_client->setKeyPrefix(self::KEY_PREFIX);
+        $this->_client->remove('foo');
+        $this->_client->set('foo', 'bar');
+
+        $ret = $this->_client->gets('foo');
+        $this->assertSame($ret, array('value' => 'bar', 'version' => 0));
+
+        $this->_client->close();
+    }
+
+    public function testShouldCheackAndVersion()
+    {
+        $this->_client->connect($this->_hosts);
+        $this->_client->setKeyPrefix(self::KEY_PREFIX);
+        $this->_client->remove('foo');
+        $this->_client->set('foo', 'bar');
+
+        $ret = $this->_client->gets('foo');
+        $this->_client->cas('foo', 'foo', $ret['version']);
+        $ret = $this->_client->gets('foo');
+        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->_client->close();
+    }
+
+    public function testShouldSetFailedWhenSetOldVersionNo()
+    {
+        $this->_client->connect($this->_hosts);
+        $this->_client->setKeyPrefix(self::KEY_PREFIX);
+        $this->_client->remove('foo');
+        $this->_client->set('foo', 'bar');
+
+        $ret = $this->_client->gets('foo');
+        $this->_client->cas('foo', 'foo', $ret['version']);
+        $ret = $this->_client->gets('foo');
+        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+
+        $ret = $this->_client->cas('foo', 'baz', 0);
+        $this->assertFalse($ret);
+        $ret = $this->_client->gets('foo');
+        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->_client->close();
+    }
 }

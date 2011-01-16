@@ -272,6 +272,49 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->_client->close();
     }
 
+    public function testShouldGetVersionNo()
+    {
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+
+        $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, array('value' => 'bar', 'version' => 0));
+
+        $this->_client->close();
+    }
+
+    public function testShouldCheackAndVersion()
+    {
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+
+        $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $this->_client->cas(self::KEY_PREFIX . 'foo', 'foo', $ret['version']);
+        $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->_client->close();
+    }
+
+    public function testShouldSetFailedWhenSetOldVersionNo()
+    {
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+
+        $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $this->_client->cas(self::KEY_PREFIX . 'foo', 'foo', $ret['version']);
+        $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+
+        $ret = $this->_client->cas(self::KEY_PREFIX . 'foo', 'baz', 0);
+        $this->assertFalse($ret);
+        $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->_client->close();
+    }
+
     public function testShouldGetRawData()
     {
         $this->_client->connect(self::HOST, self::PORT);
@@ -300,6 +343,8 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'bar');
+
+
 
         $this->_client->close();
     }
