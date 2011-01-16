@@ -132,6 +132,16 @@ class Socket implements Adapter
     const ID_ADD = '6';
 
     /**
+     * Gets.
+     */
+    const ID_GETS = '15';
+
+    /**
+     * Cas.
+     */
+    const ID_CAS = '16';
+
+    /**
      * Socket resouce.
      *
      * @var    mixed
@@ -348,38 +358,124 @@ class Socket implements Adapter
     }
 
     /**
-     * Get data.
+     * Retrieve the value of a record.
      *
-     * @param  mixed $key Key
-     * @param  mixed $tag Tag
+     * @param  mixed $key The key of the record
      * @access public
      * @throws \Net\Okuyama\Adapter\Socket Server returns error
-     * @return mixed null or value
+     * @return mixed null or the value of the record
      */
     public function get($key)
     {
-        $command  = self::ID_GET . self::DATA_DELIMITER . base64_encode($key) . "\n";
-        $response = $this->_parse($this->send($command)->response(), self::ID_GET);
-        $result = array($response[1]);
+        $result = $this->_get($key, self::ID_GET);
+        return $result[1];
+    }
+
+    /**
+     * Set the value of a record.
+     *
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
+     * @param  array $tags Tags
+     * @access public
+     * @return \Net\Okuyama\Adapter\Socket Fluent interface.
+     */
+    public function set($key, $value, array $tags = array())
+    {
+        return $this->_set($key, $value, self::ID_SET, $tags);
+    }
+
+    /**
+     * Add a record.
+     *
+     * <pre>
+     *   Can not override data.
+     * </pre>
+     *
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
+     * @param  array $tags Tags
+     * @access public
+     * @return \Net\Okuyama\Adapter\Socket Fluent interface.
+     */
+    public function add($key, $value, array $tags = array())
+    {
+        return $this->_set($key, $value, self::ID_ADD, $tags);
+    }
+
+    /**
+     * Get version no and value at once.
+     *
+     * <pre>
+     *   Equivalent to Memcached gets.
+     * </pre>
+     *
+     * @param  mixed $key The key of the record
+     * @access public
+     * @return array The value of the record and version no
+     */
+    public function gets($key)
+    {
+        list($message, $value, $version) = $this->_get($key, self::ID_GETS);
+        return array('value' => $value, 'version' => intval($version));
+    }
+
+    /**
+     * Check and set record.
+     *
+     * <pre>
+     *   Equivalent to Memcached cas.
+     * </pre>
+     *
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
+     * @param  array $tags Tags
+     * @param  mixed $version Version no
+     * @access public
+     * @return mixed Fluent interface or false
+     */
+    public function cas($key, $value, $version, array $tags = array())
+    {
+        return $this->_set($key, $value, self::ID_CAS, $tags, $version);
+    }
+
+    /**
+     * Remove a record.
+     *
+     * @param  mixed $key The key of the record
+     * @access public
+     * @return bool true: Sucess to remove data, false: Fail to remove data
+     */
+    public function remove($key)
+    {
+        if ($key === null || $key === '') {
+            $this->_rawData = null;
+            return false;
+        }
+
+        $command  = self::ID_REMOVE . self::DATA_DELIMITER
+                  . base64_encode($key) . self::DATA_DELIMITER
+                  . self::TRANSACTION_CODE . "\n";
+        $response = $this->_parse($this->send($command)->response(), self::ID_REMOVE);
+        $result   = array($response[1]);
         if ($response[1] === 'true') {
             if ($response[2] === self::BLANK_STRING) {
                 $result[] = '';
             } else {
                 $result[] = base64_decode($response[2]);
             }
+            $this->_rawData = $result;
+
+            return true;
         } else if ($response[1] === 'false') {
             $result[] = null;
-        } else if ($response[1] === 'error') {
-            $result[] = null;
         } else {
-            throw new Exception(
-                sprintf('Unknown response(%s) return.'), $response[2]
-            );
+            $result[] = $response[2];
         }
 
         $this->_rawData = $result;
 
-        return $result[1];
+        return false;
     }
 
     /**
@@ -429,50 +525,100 @@ class Socket implements Adapter
     }
 
     /**
-     * Set value.
+     * Play script
      *
-     * @param  mixed $key
-     * @param  mixed $value
-     * @param  array $tags
      * @access public
-     * @return \Net\Okuyama\Adapter\Socket Fluent interface.
+     * @return void
      */
-    public function set($key, $value, array $tags = array())
+    public function playScript()
     {
-        return $this->_set($key, $value, self::ID_SET, $tags);
+        // TODO: Implements
     }
 
     /**
-     * Add value.
+     * Send data to server.
      *
-     * <pre>
-     *   Can not override data.
-     * </pre>
-     *
-     * @param  mixed $key
      * @param  mixed $value
-     * @param  array $tags
      * @access public
-     * @return \Net\Okuyama\Adapter\Socket Fluent interface.
+     * @throws \Net\Okuyama\Exception Fail to write data
+     * @return \Net\Okuyama\Adapter\Socket Fluent interface
      */
-    public function add($key, $value, array $tags = array())
+    public function send($value)
     {
-        return $this->_set($key, $value, self::ID_ADD, $tags);
+        if (false === @fwrite($this->_socket, $value, strlen($value))) {
+            throw new Exception('Error writing request.');
+        }
+        return $this;
+    }
+
+    /**
+     * Get data from socket.
+     *
+     * @access public
+     * @throws \Net\Okuyama\Exception Fail to get data
+     * @return string Received socket data
+     */
+    public function response()
+    {
+        if (false === ($result = @fgets($this->_socket))) {
+            throw new Exception('Error getting response.');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get value by key string.
+     *
+     * @param  mixed $key The key of the record
+     * @param  mixed $type Get or gets
+     * @access private
+     * @return array Result of get command
+     */
+    private function _get($key, $type = self::ID_GET)
+    {
+        $command  = $type . self::DATA_DELIMITER . base64_encode($key) . "\n";
+        $response = $this->_parse($this->send($command)->response(), $type);
+        $result   = array($response[1]);
+        if ($response[1] === 'true') {
+            if ($response[2] === self::BLANK_STRING) {
+                $result[] = '';
+            } else {
+                $result[] = base64_decode($response[2]);
+            }
+            if ($type === self::ID_GETS) {
+                $result[] = $response[3];
+            }
+        } else if ($response[1] === 'false') {
+            $result[] = null;
+            $result[] = $response[2];
+        } else if ($response[1] === 'error') {
+            $result[] = null;
+            $result[] = $response[2];
+        } else {
+            throw new Exception(
+                sprintf('Unknown response(%s) return.'), $response[2]
+            );
+        }
+
+        $this->_rawData = $result;
+
+        return $result;
     }
 
     /**
      * Set|add value.
      *
-     * @param  mixed $key
-     * @param  mixed $value
-     * @param  array $tags
+     * @param  mixed $key Key string
+     * @param  mixed $value Value string
+     * @param  array $tags Tags
      * @access public
      * @throws \Net\Okuyama\Exception Overflow data size.
      * @return \Net\Okuyama\Adapter\Socket Fluent interface.
      */
-    private function _set($key, $value, $type = self::ID_SET, array $tags = array())
+    private function _set($key, $value, $type = self::ID_SET, array $tags = array(), $version = null)
     {
-        $tpl = '%s(%s) size is overflow, allow max size is %s';
+        $tpl = '%s(%s) size is overflow, allow max size is %s.';
         if (strlen($key) > $this->_maxSize) {
             throw new Exception(sprintf($tpl, 'Key string', $key, $this->_maxSize));
         }
@@ -505,8 +651,12 @@ class Socket implements Adapter
 
         $command  = $command . self::DATA_DELIMITER
                   . self::TRANSACTION_CODE . self::DATA_DELIMITER
-                  . $value . "\n";
+                  . $value;
 
+        if ($type === self::ID_CAS && $version !== null && is_int($version)) {
+            $command = $command . self::DATA_DELIMITER . $version;
+        }
+        $command .= "\n";
         $response = $this->_parse($this->send($command)->response(), $type);
         if ($response[1] === 'true') {
             $this->_rawData = array($response[1], $response[2]);
