@@ -246,9 +246,44 @@ class Okuyama
     }
 
     /**
-     * Remove data.
+     * Get version no and value at once.
      *
-     * @param  mixed $key Key
+     * <pre>
+     *   Equivalent to Memcached gets.
+     * </pre>
+     *
+     * @param  mixed $key The key of the record
+     * @access public
+     * @return array The value of the record and version no
+     */
+    public function gets($key)
+    {
+        return $this->_client->gets($this->_keyPrefix . $key);
+    }
+
+    /**
+     * Check and set record.
+     *
+     * <pre>
+     *   Equivalent to Memcached cas.
+     * </pre>
+     *
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
+     * @param  array $tags Tags
+     * @param  mixed $version Version no
+     * @access public
+     * @return mixed Fluent interface or false
+     */
+    public function cas($key, $value, $version, array $tags = array())
+    {
+        return $this->_client->cas($this->_keyPrefix . $key, $value, $version, $tags);
+    }
+
+    /**
+     * Remove a record.
+     *
+     * @param  mixed $key The key of the record
      * @access public
      * @return mixed Result of remove command
      */
