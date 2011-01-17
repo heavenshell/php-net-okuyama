@@ -169,7 +169,7 @@ class Okuyama
 
         $this->createInstance($this->_adapter);
         if ($configs !== array()) {
-            $this->setConfigs($configs);
+            $this->setConfig($configs);
         }
     }
 
