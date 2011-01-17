@@ -202,7 +202,7 @@ class Okuyama
     }
 
     /**
-     * Get data.
+     * Retrieve the value of a record.
      *
      * @param  mixed $key Key string
      * @param  mixed $tag Tag string
@@ -215,7 +215,7 @@ class Okuyama
     }
 
     /**
-     * Set data.
+     * Set the value of a record.
      *
      * @param  mixed $key The key of the record
      * @param  mixed $value The value of the record
@@ -230,7 +230,7 @@ class Okuyama
     }
 
     /**
-     * Add data.
+     * Add a record.
      *
      * @param  mixed $key The key of the record
      * @param  mixed $value The value of the record
