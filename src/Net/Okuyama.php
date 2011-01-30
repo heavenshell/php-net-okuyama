@@ -361,6 +361,11 @@ class Okuyama
         return $result;
     }
 
+    public function playScript($key, $script, $update = false)
+    {
+        return $this->_client->playScript($this->_keyPrefix . $key, $script, $update);
+    }
+
     /**
      * Remove tag.
      *

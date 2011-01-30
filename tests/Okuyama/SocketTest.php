@@ -315,6 +315,42 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->_client->close();
     }
 
+    public function testShouldRunJavaScriptCode()
+    {
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $script = <<<EOT
+var dataValue;
+var retValue = 'foo' + dataValue;
+var execRet = '1';
+EOT;
+        $ret = $this->_client->playScript(self::KEY_PREFIX . 'foo', $script);
+        $this->assertSame($ret, 'foobar');
+        $ret = $this->_client->get(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, 'bar');
+
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->close();
+    }
+
+    public function testShouldRunJavaScriptCodeAndUpdateValue()
+    {
+        $this->_client->connect(self::HOST, self::PORT);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $script = <<<EOT
+var dataValue;
+var retValue = 'foo' + dataValue;
+var execRet = '2';
+EOT;
+        $ret = $this->_client->playScript(self::KEY_PREFIX . 'foo', $script, true);
+        $this->assertSame($ret, 'foobar');
+        $ret = $this->_client->get(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, 'foobar');
+
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->close();
+    }
+
     public function testShouldGetRawData()
     {
         $this->_client->connect(self::HOST, self::PORT);
@@ -340,11 +376,49 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($result[1], array(self::KEY_PREFIX . 'foo'));
 
         $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $this->_client->gets(self::KEY_PREFIX . 'foo');
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'bar');
+        $this->assertSame($result[2], '0');
+
+        $this->_client->cas(self::KEY_PREFIX . 'foo', 'foobar', 0);
+        $result = $this->_client->getRawData();
+        $this->assertSame($result[0], 'true');
+        $this->assertSame($result[1], 'OK');
+
+        $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $result = $this->_client->getRawData();
+        $this->assertSame($result[0], 'true');
+        $this->assertSame($result[1], 'foobar');
+        $this->assertSame($result[2], '1');
+
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $result = $this->_client->getRawData();
+        $this->assertSame($result[0], 'true');
+        $this->assertSame($result[1], 'foobar');
 
 
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $script = <<<EOT
+var dataValue;
+var retValue = 'foo' + dataValue;
+var execRet = '1';
+EOT;
+        $this->_client->playScript(self::KEY_PREFIX . 'foo', $script);
+        $result = $this->_client->getRawData();
+        $this->assertSame($result[0], 'true');
+        $this->assertSame($result[1], 'foobar');
+
+        $script = <<<EOT
+var retValue = 'foo';
+var execRet = '2';
+EOT;
+        $this->_client->playScript(self::KEY_PREFIX . 'foo', $script, true);
+        $result = $this->_client->getRawData();
+        $this->assertSame($result[0], 'true');
+        $this->assertSame($result[1], 'foo');
 
         $this->_client->close();
     }

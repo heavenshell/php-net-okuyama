@@ -339,4 +339,40 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
         $this->_client->close();
     }
+
+    public function testShouldRunJavaScriptCode()
+    {
+        $this->_client->connect($this->_hosts);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $script = <<<EOT
+var dataValue;
+var retValue = 'foo' + dataValue;
+var execRet = '1';
+EOT;
+        $ret = $this->_client->playScript(self::KEY_PREFIX . 'foo', $script);
+        $this->assertSame($ret, 'foobar');
+        $ret = $this->_client->get(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, 'bar');
+
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->close();
+    }
+
+    public function testShouldRunJavaScriptCodeAndUpdateValue()
+    {
+        $this->_client->connect($this->_hosts);
+        $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
+        $script = <<<EOT
+var dataValue;
+var retValue = 'foo' + dataValue;
+var execRet = '2';
+EOT;
+        $ret = $this->_client->playScript(self::KEY_PREFIX . 'foo', $script, true);
+        $this->assertSame($ret, 'foobar');
+        $ret = $this->_client->get(self::KEY_PREFIX . 'foo');
+        $this->assertSame($ret, 'foobar');
+
+        $this->_client->remove(self::KEY_PREFIX . 'foo');
+        $this->_client->close();
+    }
 }

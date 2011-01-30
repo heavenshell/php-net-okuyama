@@ -132,6 +132,16 @@ class Socket implements Adapter
     const ID_ADD = '6';
 
     /**
+     * Play script.
+     */
+    const ID_PLAY_SCRIPT = '8';
+
+    /**
+     * Play script for update.
+     */
+    const ID_UPDATE_SCRIPT = '9';
+
+    /**
      * Gets.
      */
     const ID_GETS = '15';
@@ -525,14 +535,48 @@ class Socket implements Adapter
     }
 
     /**
-     * Play script
+     * Run JavaScript code.
      *
+     * <pre>
+     *   If you want to update value by script, use self::ID_UPDATE_SCRIPT.
+     * </pre>
+     *
+     * @param  mixed $key The key of the record
+     * @param  mixed $script JavaScript code to run
+     * @param  mixed $update If true set, update the value of the record
      * @access public
-     * @return void
+     * @return string Result of JavaScript code evaluation
      */
-    public function playScript()
+    public function playScript($key, $script, $update = false)
     {
-        // TODO: Implements
+        if ($key === null || $key === '') {
+            $this->_rawData = null;
+            return false;
+        }
+        $type     = ($update === false) ? self::ID_PLAY_SCRIPT : self::ID_UPDATE_SCRIPT;
+        $command  = $type . self::DATA_DELIMITER . base64_encode($key)
+                  . self::DATA_DELIMITER . base64_encode($script) . "\n";
+        $response = $this->_parse($this->send($command)->response(), $type);
+        $result   = array($response[1]);
+        if ($response[1] === 'true') {
+            $data = $response[2];
+            if ($data === self::BLANK_STRING) {
+                $result[] = '';
+            } else {
+                $result[] = base64_decode($data);
+            }
+        } else if ($response[1] === 'false' || $response[1] === 'error') {
+            $result[] = null;
+            $result[] = $response[2];
+        } else {
+            throw new Exception(
+                sprintf('Unknown response(%s) return.'), $response[2]
+            );
+        }
+
+        $this->_rawData = $result;
+
+        return $result[1];
     }
 
     /**
