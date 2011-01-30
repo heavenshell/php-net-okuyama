@@ -279,7 +279,6 @@ class BasicTest extends \PHPUnit_Framework_TestCase
             self::KEY_PREFIX . 'foo'
         ));
 
-
         $this->_client->setKeyPrefix('');
         $this->assertSame($this->_client->get(self::KEY_PREFIX . 'bar'), 'foo');
         $this->assertSame($this->_client->get(self::KEY_PREFIX . 'hoge'), 'fuga');

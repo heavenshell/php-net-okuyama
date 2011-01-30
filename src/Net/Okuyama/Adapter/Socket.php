@@ -653,8 +653,8 @@ class Socket implements Adapter
     /**
      * Set|add value.
      *
-     * @param  mixed $key Key string
-     * @param  mixed $value Value string
+     * @param  mixed $key The key of the record
+     * @param  mixed $value The value of the record
      * @param  array $tags Tags
      * @access public
      * @throws \Net\Okuyama\Exception Overflow data size.

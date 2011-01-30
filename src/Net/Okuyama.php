@@ -114,7 +114,6 @@ class Okuyama
         return $this;
     }
 
-
     /**
      * Create client instance.
      *
