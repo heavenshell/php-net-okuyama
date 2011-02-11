@@ -201,6 +201,17 @@ class Okuyama
     }
 
     /**
+     * Is connected?
+     *
+     * @access public
+     * @return bool true: Connected, false: Not connected
+     */
+    public function isConnected()
+    {
+        return $this->_client->isConnected();
+    }
+
+    /**
      * Retrieve the value of a record.
      *
      * @param  mixed $key Key string

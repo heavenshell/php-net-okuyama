@@ -112,9 +112,22 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->_client->close();
     }
 
+    public function testShouldReturnTrueWhenConnected()
+    {
+        $this->_client->connect($this->_hosts);
+        $ret = $this->_client->isConnected();
+        $this->assertTrue($ret);
+        $this->_client->close();
+    }
+
+    public function testShouldReturnFalseWhenNotConnected()
+    {
+        $ret = $this->_client->isConnected();
+        $this->assertFalse($ret);
+    }
+
     public function testShouldConnectToHostAuto()
     {
-
         $this->_hosts[] = '127.0.0.1:8889';
         $result = $this->_client->connect($this->_hosts);
         $this->assertTrue($result instanceof \Net\Okuyama);
