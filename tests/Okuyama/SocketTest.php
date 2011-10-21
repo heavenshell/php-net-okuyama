@@ -152,11 +152,14 @@ class SocketTest extends \PHPUnit_Framework_TestCase
                       ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
         $result = $this->_client->getKeysByTag('fiz');
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo')
         );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
         $this->_client->close();
     }
 
@@ -168,11 +171,15 @@ class SocketTest extends \PHPUnit_Framework_TestCase
                       ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
                       ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
         $result = $this->_client->getKeysByTag('baz');
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo'
-        ));
+        );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
+
         $this->_client->close();
     }
 
@@ -220,11 +227,14 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->_client->remove(self::KEY_PREFIX . 'foo');
 
         $result = $this->_client->getKeysByTag('fiz', true);
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo'
-        ));
+        );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
         $this->_client->close();
     }
 
@@ -279,7 +289,7 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
 
         $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
-        $this->assertSame($ret, array('value' => 'bar', 'version' => 0));
+        $this->assertRegExp('/^[0-9]+/', strval($ret['version']));
 
         $this->_client->close();
     }
@@ -291,9 +301,11 @@ class SocketTest extends \PHPUnit_Framework_TestCase
         $this->_client->set(self::KEY_PREFIX . 'foo', 'bar');
 
         $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
+        $ver = $ret['version'];
         $this->_client->cas(self::KEY_PREFIX . 'foo', 'foo', $ret['version']);
         $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
-        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->assertSame($ret['value'], 'foo');
+        $this->assertNotSame($ret['version'], $ver);
         $this->_client->close();
     }
 
@@ -305,13 +317,15 @@ class SocketTest extends \PHPUnit_Framework_TestCase
 
         $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
         $this->_client->cas(self::KEY_PREFIX . 'foo', 'foo', $ret['version']);
+        $ver = $ret['version'];
         $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
-        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->assertNotSame($ret['version'], $ver);
+        $ver2 = $ret['version'];
 
         $ret = $this->_client->cas(self::KEY_PREFIX . 'foo', 'baz', 0);
         $this->assertFalse($ret);
         $ret = $this->_client->gets(self::KEY_PREFIX . 'foo');
-        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->assertSame($ret['version'], $ver2);
         $this->_client->close();
     }
 
@@ -381,9 +395,10 @@ EOT;
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'bar');
-        $this->assertSame($result[2], '0');
+        $this->assertRegExp('/^[0-9]+/', $result[2]);
+        $ver = intval($result[2]);
 
-        $this->_client->cas(self::KEY_PREFIX . 'foo', 'foobar', 0);
+        $this->_client->cas(self::KEY_PREFIX . 'foo', 'foobar', $ver);
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'OK');
@@ -392,7 +407,7 @@ EOT;
         $result = $this->_client->getRawData();
         $this->assertSame($result[0], 'true');
         $this->assertSame($result[1], 'foobar');
-        $this->assertSame($result[2], '1');
+        $this->assertNotSame(intval($result[2]), $ver);
 
         $this->_client->remove(self::KEY_PREFIX . 'foo');
         $result = $this->_client->getRawData();

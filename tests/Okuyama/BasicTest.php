@@ -154,11 +154,15 @@ class BasicTest extends \PHPUnit_Framework_TestCase
                       ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
 
         $result = $this->_client->getKeysByTag('fiz');
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo'
-        ));
+        );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
+
         $this->_client->close();
     }
 
@@ -170,11 +174,14 @@ class BasicTest extends \PHPUnit_Framework_TestCase
                       ->set(self::KEY_PREFIX . 'hoge', 'fuga', $tags)
                       ->set(self::KEY_PREFIX . 'foo', 'bar', $tags);
         $result = $this->_client->getKeysByTag('baz');
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo'
-        ));
+        );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
         $this->_client->close();
     }
 
@@ -222,11 +229,14 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->_client->remove(self::KEY_PREFIX . 'foo');
 
         $result = $this->_client->getKeysByTag('fiz', true);
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo'
-        ));
+        );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
         $this->_client->close();
     }
 
@@ -286,11 +296,14 @@ class BasicTest extends \PHPUnit_Framework_TestCase
                       ->set('foo', 'bar', $tags);
 
         $result = $this->_client->getKeysByTag('fiz', true);
-        $this->assertSame($result, array(
+        $keys   = array(
+            self::KEY_PREFIX . 'foo',
             self::KEY_PREFIX . 'bar',
             self::KEY_PREFIX . 'hoge',
-            self::KEY_PREFIX . 'foo'
-        ));
+        );
+        foreach ($keys as $key) {
+            $this->assertTrue(in_array($key, $result));
+        }
 
         $this->_client->setKeyPrefix('');
         $this->assertSame($this->_client->get(self::KEY_PREFIX . 'bar'), 'foo');
@@ -314,7 +327,8 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->_client->set('foo', 'bar');
 
         $ret = $this->_client->gets('foo');
-        $this->assertSame($ret, array('value' => 'bar', 'version' => 0));
+        $this->assertSame($ret['value'], 'bar');
+        $this->assertRegExp('/^[0-9]+/', strval($ret['version']));
 
         $this->_client->close();
     }
@@ -327,9 +341,11 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->_client->set('foo', 'bar');
 
         $ret = $this->_client->gets('foo');
+        $ver = $ret['version'];
         $this->_client->cas('foo', 'foo', $ret['version']);
         $ret = $this->_client->gets('foo');
-        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->assertSame($ret['value'], 'foo');
+        $this->assertNotSame($ret['version'], $ver);
         $this->_client->close();
     }
 
@@ -341,14 +357,17 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->_client->set('foo', 'bar');
 
         $ret = $this->_client->gets('foo');
+        $ver = $ret['version'];
         $this->_client->cas('foo', 'foo', $ret['version']);
         $ret = $this->_client->gets('foo');
-        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->assertSame($ret['value'], 'foo');
+        $this->assertNotSame($ret['version'], $ver);
+        $ver2 = $ret['version'];
 
         $ret = $this->_client->cas('foo', 'baz', 0);
         $this->assertFalse($ret);
         $ret = $this->_client->gets('foo');
-        $this->assertSame($ret, array('value' => 'foo', 'version' => 1));
+        $this->assertSame($ret['version'], $ver2);
         $this->_client->close();
     }
 
